@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Advanced Weather App</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%);
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .weather-app {
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    input {
+      padding: 10px;
+      width: 70%;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 10px 14px;
+      margin-left: 5px;
+      border: none;
+      background-color: #1e90ff;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0d74d1;
+    }
+    .weather-info {
+      margin-top: 25px;
+    }
+    .weather-info img {
+      width: 80px;
+    }
+    .temp {
+      font-size: 32px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    .description {
+      text-transform: capitalize;
+      color: #666;
+    }
+    .details {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #444;
+      line-height: 1.6;
+    }
+    .error {
+      color: red;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="weather-app">
+  <h1>🌤 Weather Checker</h1>
+  <input type="text" id="cityInput" placeholder="Enter city name..." />
+  <button onclick="getWeatherByCity()">Search</button>
+  <button onclick="getWeatherByLocation()">📍</button>
+  <div id="weatherDisplay" class="weather-info"></div>
+  <div id="error" class="error"></div>
+</div>
+
+<script>
+  const apiKey = "YOUR_API_KEY_HERE"; // Replace with your API key
+  const weatherDisplay = document.getElementById("weatherDisplay");
+  const errorDisplay = document.getElementById("error");
+
+  function getWeatherByCity() {
+    const city = document.getElementById("cityInput").value.trim();
+    if (!city) {
+      showError("Please enter a city name.");
+      return;
+    }
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&units=metric&appid=${apiKey}`;
+    fetchWeather(url);
+  }
+
+  function getWeatherByLocation() {
+    if (!navigator.geolocation) {
+      showError("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        const { latitude, longitude } = position.coords;
+        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${apiKey}`;
+        fetchWeather(url);
+      },
+      () => {
+        showError("Unable to retrieve your location.");
+      }
+    );
+  }
+
+  function fetchWeather(url) {
+    errorDisplay.textContent = "";
+    weatherDisplay.innerHTML = "Loading...";
+    fetch(url)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("City not found or request failed.");
+        }
+        return response.json();
+      })
+      .then(data => {
+        displayWeather(data);
+      })
+      .catch(error => {
+        showError(error.message);
+        weatherDisplay.innerHTML = "";
+      });
+  }
+
+  function displayWeather(data) {
+    const {
+      name,
+      sys: { country },
+      weather,
+      main: { temp, feels_like, humidity },
+      wind: { speed }
+    } = data;
+
+    const icon = weather[0].icon;
+    const description = weather[0].description;
+
+    weatherDisplay.innerHTML = `
+      <h2>${name}, ${country}</h2>
+      <img src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${description}" />
+      <div class="temp">${Math.round(temp)}°C</div>
+      <div class="description">${description}</div>
+      <div class="details">
+        Feels like: ${Math.round(feels_like)}°C<br>
+        Humidity: ${humidity}%<br>
+        Wind speed: ${speed} m/s
+      </div>
+    `;
+  }
+
+  function showError(message) {
+    errorDisplay.textContent = message;
+  }
+</script>
+
+</body>
+</html>
